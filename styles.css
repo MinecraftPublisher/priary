@@ -1,0 +1,173 @@
+:root {
+    --font: 'Geist sans';
+    --text: #fff;
+    --bg: #000;
+    --border: 2px solid hsl(0, 0%, 20%);
+}
+
+body {
+    background-color: var(--bg);
+    color: var(--text);
+
+    font-family: var(--font);
+    margin-left: 1rem;
+}
+
+body *,
+* {
+    user-select: none !important;
+}
+
+header-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+
+    display: block;
+    width: 100vw;
+    height: 20vh;
+
+    background-color: var(--bg);
+}
+
+header {
+    position: fixed;
+    top: 10%;
+    left: 50%;
+
+    transform: translate(-50%, -50%);
+
+    text-align: center;
+
+    z-index: 10;
+}
+
+footer {
+    position: fixed;
+    bottom: 50px;
+    left: 30px;
+
+    /* transform: translate(0, -50%); */
+    text-align: left;
+}
+
+footer>* {
+    font-size: 1.5rem;
+}
+
+h1 {
+    font-size: 4rem;
+    user-select: none;
+
+    margin-top: 50px;
+    margin-bottom: 0;
+}
+
+h2 {
+    margin-top: 0;
+    font-size: 1.4rem;
+    margin-bottom: 0;
+}
+
+h3 {
+    color: var(--text) !important;
+    font-size: 1rem;
+
+    border: var(--border);
+
+    border-radius: 10px;
+    background-color: var(--bg);
+    padding: 20px;
+
+    position: fixed;
+    top: 45%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+
+    z-index: 10;
+}
+
+a {
+    color: rgb(0, 128, 255);
+    cursor: pointer;
+}
+
+button {
+    /* padding: 20px 60px; */
+    border: none;
+    outline: none;
+    position: relative;
+    border-radius: 10px;
+    background-color: var(--bg);
+    cursor: pointer;
+
+    color: white;
+    font-size: 1.05rem;
+    margin-right: 10px;
+    margin-bottom: 5px;
+
+    border: var(--border);
+
+    padding: 10px;
+
+    font-family: var(--font);
+
+    z-index: 11;
+
+    transition: 0.2s background-color;
+}
+
+button:active {
+    background-color: #262626;
+}
+
+b {
+    font-weight: bolder;
+    color: rgb(255, 105, 105);
+    font-size: 1.3rem;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+ul {
+    margin-top: 10px;
+}
+
+form h2 {
+    text-align: center !important;
+}
+
+input,
+textarea {
+    font-family: var(--font);
+    border-radius: 6px !important;
+    outline: none;
+    border: var(--border);
+    background-color: var(--bg);
+    color: var(--text);
+    padding: 8px;
+
+    font-size: 1.3rem;
+    min-width: 95%;
+}
+
+
+form>button {
+    font-size: 1.5rem !important;
+    min-width: 100% !important;
+}
+
+textarea {
+    resize: vertical;
+    width: 400px;
+    max-width: 90vw;
+    height: 100px;
+}
+
+label {
+    font-size: 1.5rem;
+}
+
+label> :not(input):not(texarea) {
+    margin-bottom: 10px;
+}
