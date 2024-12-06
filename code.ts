@@ -172,15 +172,11 @@ input.addEventListener('keypress', async e => {
         if (text === '.erase' && confirm('Do you REALLY want to erase ALL data?')) {
             localStorage.clear()
             location.reload()
-        }
-
-        if (text === '.share') {
+        } else if (text === '.share') {
             const data = better_atob(escape(encodeURI(JSON.stringify(insecure_storage.get()))))
 
             prompt('Here is your share-able link:', `${location.href}?data=${data}`)
-        }
-
-        if (text === '.change') {
+        } else if (text === '.change') {
             input.value = ''
 
             const Prompt = document.createElement('message')
@@ -212,9 +208,7 @@ input.addEventListener('keypress', async e => {
                     input.placeholder = 'Type a message...'
                 }
             }
-        }
-
-        else if (text.length > 0) {
+        } else if (text.length > 0) {
             set_prop(secure_storage, 'typed', {
                 entries: [
                     ...secure_storage.get().typed.entries,

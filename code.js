@@ -23896,12 +23896,10 @@ input.addEventListener("keypress", async (e) => {
     if (text === ".erase" && confirm("Do you REALLY want to erase ALL data?")) {
       localStorage.clear();
       location.reload();
-    }
-    if (text === ".share") {
+    } else if (text === ".share") {
       const data = better_atob(escape(encodeURI(JSON.stringify(insecure_storage.get()))));
       prompt("Here is your share-able link:", `${location.href}?data=${data}`);
-    }
-    if (text === ".change") {
+    } else if (text === ".change") {
       input.value = "";
       const Prompt = document.createElement("message");
       Prompt.innerHTML = `<text>Enter the new password you want to use, or blank to dismiss:</text><date>eons ago</date>`;
