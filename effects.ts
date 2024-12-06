@@ -30,6 +30,8 @@ type scopeType = {
     state<T>(initial: T): stateType<T>,
     /** Creates an effect, which re-runs the given function any time the states given to it are changed. */
     effect<T>(handler: Function, ...states: stateType<T>[]): void,
+    /** Creates an effect, which runs once at the start, and then re-runs the given function any time the states passed onto it change in the scope. */
+    immediateEffect<T>(handler: Function, ...values: stateType<T>[]): void,
     /** Returns an HTML element that re-renders itself based on the return value of the callback provided to it when its states change. */
     htmlCallbackEffect(callback: () => string, ...states: stateType<any>[]): HTMLElement,
     /** Creates an HTML effect, which takes HTMl code and returns an element that re-renders itself every time its states change. States may define a custom value callback when they're used in the html with the syntax `{{name}}`. Maps every state to a given name. */
@@ -239,16 +241,8 @@ function scope(object = {}): scopeType {
             let last = target[prop]
             target[prop] = value
 
-            function deepEqual(x, y) {
-                const ok = Object.keys, tx = typeof x, ty = typeof y;
-                return x && y && tx === 'object' && tx === ty ? (
-                    ok(x).length === ok(y).length &&
-                    ok(x).every(key => deepEqual(x[key], y[key]))
-                ) : (x === y)
-            }
-
             if (!effects.hasOwnProperty(prop.toString())) return true
-            if (!deepEqual(last, value)) for (let effect of effects[prop.toString()] ?? []) effect()
+            for (let effect of effects[prop.toString()] ?? []) effect()
             return true
         }
     })

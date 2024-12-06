@@ -2,7 +2,8 @@
     --font: 'Geist sans';
     --text: #fff;
     --bg: #000;
-    --border: 2px solid hsl(0, 0%, 20%);
+    --border: 1px solid hsl(0, 0%, 30%);
+    --border-focus: 1px solid hsl(0, 0%, 60%);
 }
 
 body {
@@ -11,11 +12,6 @@ body {
 
     font-family: var(--font);
     margin-left: 1rem;
-}
-
-body *,
-* {
-    user-select: none !important;
 }
 
 header-banner {
@@ -57,7 +53,6 @@ footer>* {
 
 h1 {
     font-size: 4rem;
-    user-select: none;
 
     margin-top: 50px;
     margin-bottom: 0;
@@ -148,7 +143,6 @@ textarea {
     padding: 8px;
 
     font-size: 1.3rem;
-    min-width: 95%;
 }
 
 
@@ -170,4 +164,70 @@ label {
 
 label> :not(input):not(texarea) {
     margin-bottom: 10px;
+}
+
+:root {
+    --cover-height: 40px;
+}
+
+messages {
+    display: block;
+    /* max-width: 500px; */
+    padding-top: 2rem;
+    margin: auto;
+    max-height: calc(100vh - var(--cover-height));
+}
+
+message {
+    display: block;
+
+    color: #fff;
+    background: #151515;
+    
+    border-radius: 15px;
+    padding: 20px 30px;
+    border-bottom-left-radius: 0;
+    border: var(--border);
+    margin-bottom: 1rem;
+
+    max-width: 50%;
+    /* width: auto; */
+
+    transition: 0.5s background;
+}
+
+message > text {
+    display: block;
+}
+
+message > date {
+    font-size: 0.75rem;
+    user-select: none;
+}
+
+input {
+    position: fixed;
+    bottom: 3px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100vw - 2rem) !important;
+    margin: 0;
+    z-index: 3;
+    height: calc(var(--cover-height) - 23px);
+
+    transition: 0.3s border;
+}
+
+input:focus {
+    border: var(--border-focus);
+}
+
+cover {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100vw;
+    height: var(--cover-height);
+    background-color: #000000;
+    z-index: 2;
 }

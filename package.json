@@ -1,5 +1,9 @@
 {
   "dependencies": {
     "crypto-js": "^4.2.0"
+  },
+  "scripts": {
+    "build": "nodemon --exec \"clear; bun build code.ts --target=browser > code.js\" --ext ts",
+    "serve": "clear; bunx serve"
   }
 }
