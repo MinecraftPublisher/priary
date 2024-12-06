@@ -23762,6 +23762,16 @@ var effects_default = scope;
 var set_prop = function(state, prop, value) {
   state.set({ ...state.get(), [prop]: value });
 };
+var better_atob = function(str) {
+  return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) {
+    return String.fromCharCode(parseInt(p1, 16));
+  }));
+};
+var better_btoa = function(str) {
+  return decodeURIComponent(Array.prototype.map.call(atob(str), function(c) {
+    return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+  }).join(""));
+};
 var relativeTime = function(time) {
   if (time === 0)
     return "eons ago";
@@ -23794,6 +23804,14 @@ var insecure_storage = state(JSON.parse(localStorage.priary_data ?? "{}"));
 effect(() => {
   localStorage.priary_data = JSON.stringify(insecure_storage.get());
 }, insecure_storage);
+var cur_URL = new URL(location.href);
+if (cur_URL.searchParams.has("data")) {
+  if (confirm("The current URL contains data content. Do you want to load from there?")) {
+    insecure_storage.set(JSON.parse(decodeURI(unescape(better_btoa(cur_URL.searchParams.get("data"))))));
+  }
+  cur_URL.searchParams.delete("data");
+  location.href = cur_URL.href;
+}
 var secure_storage = state({
   typed: {
     entries: []
@@ -23802,49 +23820,51 @@ var secure_storage = state({
 var $ = (x) => document.querySelector(x);
 var last_wrong = false;
 var input = $("input");
-var setup = async () => {
-  let password;
-  const get_passwd_helper = (text) => new Promise((r) => {
-    if (last_wrong)
-      input.style.borderColor = "#af3000";
-    let txt = "";
-    input.placeholder = text;
-    input.type = "password";
-    const keydownevent = (e) => {
-      if (!(e.metaKey || e.ctrlKey || e.altKey)) {
-        if (last_wrong)
-          input.style.borderColor = "";
-        if (e.key.length === 1) {
-          if (e.shiftKey)
-            txt += e.key.toUpperCase();
-          else
-            txt += e.key;
-          input.value = input.value.replace(/./g, "*") + "*";
-        }
-        if (e.key === "Backspace") {
-          txt = txt.substring(0, txt.length - 1);
-          input.value = input.value.substring(1);
-        }
-        if (e.key === "Enter") {
+var get_passwd_helper = (text) => new Promise((r) => {
+  if (last_wrong)
+    input.style.borderColor = "#af3000";
+  let txt = "";
+  input.placeholder = text;
+  input.type = "password";
+  const keydownevent = (e) => {
+    if (!(e.metaKey || e.ctrlKey || e.altKey)) {
+      if (last_wrong)
+        input.style.borderColor = "";
+      if (e.key.length === 1) {
+        if (e.shiftKey)
+          txt += e.key.toUpperCase();
+        else
+          txt += e.key;
+        input.value = input.value.replace(/./g, "*") + "*";
+      }
+      if (e.key === "Backspace") {
+        txt = txt.substring(0, txt.length - 1);
+        input.value = input.value.substring(1);
+      }
+      if (e.key === "Enter") {
+        if (txt.length === 0 || txt.length >= 4) {
           input.type = "";
           input.placeholder = "";
           input.value = "";
           input.removeEventListener("keydown", keydownevent);
           r(txt);
         }
-        e.stopImmediatePropagation();
-        e.stopPropagation();
-        e.preventDefault();
       }
-    };
-    input.addEventListener("keydown", keydownevent);
-  });
-  const get_passwd = async (text) => {
-    const value = await get_passwd_helper(text);
-    if (value === ".reload")
-      location.reload();
-    return value;
+      e.stopImmediatePropagation();
+      e.stopPropagation();
+      e.preventDefault();
+    }
   };
+  input.addEventListener("keydown", keydownevent);
+});
+var get_passwd = async (text) => {
+  const value = await get_passwd_helper(text);
+  if (value === ".reload")
+    location.reload();
+  return value;
+};
+var setup = async () => {
+  let password;
   if (!("vault_data" in insecure_storage.get())) {
     password = Crypto.SHA512(await get_passwd("Choose a password...")).toString();
     set_prop(insecure_storage, "vault_data", Secure.encrypt("{}", password));
@@ -23870,12 +23890,43 @@ var setup = async () => {
 };
 while (!await setup())
   ;
-input.addEventListener("keypress", (e) => {
+input.addEventListener("keypress", async (e) => {
   if (e.key === "Enter") {
     const text = input.value;
     if (text === ".erase" && confirm("Do you REALLY want to erase ALL data?")) {
       localStorage.clear();
       location.reload();
+    }
+    if (text === ".share") {
+      const data = better_atob(escape(encodeURI(JSON.stringify(insecure_storage.get()))));
+      prompt("Here is your share-able link:", `${location.href}?data=${data}`);
+    }
+    if (text === ".change") {
+      input.value = "";
+      const Prompt = document.createElement("message");
+      Prompt.innerHTML = `<text>Enter the new password you want to use, or blank to dismiss:</text><date>eons ago</date>`;
+      $("messages").appendChild(Prompt);
+      const new_pass = await get_passwd_helper("Choose a new password...");
+      if (new_pass === "") {
+        Prompt.remove();
+        input.placeholder = "Type a message...";
+      } else {
+        const Prompt2 = document.createElement("message");
+        Prompt2.innerHTML = `<text>Now please confirm your new password:</text><date>eons ago</date>`;
+        $("messages").appendChild(Prompt2);
+        const new_pass_confirm = await get_passwd_helper("Confirm the new password...");
+        if (new_pass === new_pass_confirm) {
+          const new_pass_hash = Crypto.SHA512(new_pass).toString();
+          const new_data = Secure.encrypt(JSON.stringify(secure_storage.get()), new_pass_hash);
+          set_prop(insecure_storage, "vault_data", new_data);
+          location.reload();
+        } else {
+          alert("Passwords did not match!");
+          Prompt.remove();
+          Prompt2.remove();
+          input.placeholder = "Type a message...";
+        }
+      }
     } else if (text.length > 0) {
       set_prop(secure_storage, "typed", {
         entries: [
@@ -23943,6 +23994,14 @@ if (!("typed" in secure_storage.get())) {
       {
         time: 0,
         text: 'Type ".erase" in the message box and press enter to delete all of your data and restart on a clean slate.'
+      },
+      {
+        time: 0,
+        text: 'Type ".share" in the message box and press enter to generate a share-able link that transfers your ENCRYPTED data with the same password to another device.'
+      },
+      {
+        time: 0,
+        text: 'Use the ".change" command to change your password.'
       }
     ]
   });

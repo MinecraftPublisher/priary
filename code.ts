@@ -34,6 +34,30 @@ effect(() => {
     localStorage.priary_data = JSON.stringify(insecure_storage.get())
 }, insecure_storage)
 
+function better_atob(str) {
+    return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function (match, p1) {
+        return String.fromCharCode(parseInt(p1, 16))
+    }))
+}
+
+function better_btoa(str) {
+    return decodeURIComponent(Array.prototype.map.call(atob(str), function (c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+    }).join(''))
+}
+
+const cur_URL = new URL(location.href)
+
+// Load data from URL
+if (cur_URL.searchParams.has('data')) {
+    if (confirm('The current URL contains data content. Do you want to load from there?')) {
+        insecure_storage.set(JSON.parse(decodeURI(unescape(better_btoa(cur_URL.searchParams.get('data')!)))))
+    }
+
+    cur_URL.searchParams.delete('data')
+    location.href = cur_URL.href
+}
+
 const secure_storage = state<{ [key: string]: any, typed: TypedData }>({
     typed: {
         entries: []
@@ -46,36 +70,32 @@ let last_wrong = false
 
 const input = $('input')
 
-/** Provides a secure scope for containing the hashed password. */
-const setup = (async () => {
-    let password
+const get_passwd_helper = ((text: string): Promise<string> => new Promise(r => {
+    if (last_wrong) input.style.borderColor = '#af3000'
 
+    let txt = ''
 
-    const get_passwd_helper = ((text: string): Promise<string> => new Promise(r => {
-        if (last_wrong) input.style.borderColor = '#af3000'
+    input.placeholder = text
+    input.type = 'password'
 
-        let txt = ''
+    // Protect the password from being read by `input.value`.
+    const keydownevent = (e: KeyboardEvent) => {
+        if (!(e.metaKey || e.ctrlKey || e.altKey)) {
+            if (last_wrong) input.style.borderColor = ''
 
-        input.placeholder = text
-        input.type = 'password'
+            if (e.key.length === 1) {
+                if (e.shiftKey) txt += e.key.toUpperCase()
+                else txt += e.key
+                input.value = input.value.replace(/./g, '*') + '*'
+            }
 
-        // Protect the password from being read by `input.value`.
-        const keydownevent = (e: KeyboardEvent) => {
-            if (!(e.metaKey || e.ctrlKey || e.altKey)) {
-                if (last_wrong) input.style.borderColor = ''
+            if (e.key === 'Backspace') {
+                txt = txt.substring(0, txt.length - 1)
+                input.value = input.value.substring(1)
+            }
 
-                if (e.key.length === 1) {
-                    if (e.shiftKey) txt += e.key.toUpperCase()
-                    else txt += e.key
-                    input.value = input.value.replace(/./g, '*') + '*'
-                }
-
-                if (e.key === 'Backspace') {
-                    txt = txt.substring(0, txt.length - 1)
-                    input.value = input.value.substring(1)
-                }
-
-                if (e.key === 'Enter') {
+            if (e.key === 'Enter') {
+                if (txt.length === 0 || txt.length >= 4) {
                     // We got the password.
                     input.type = ''
                     input.placeholder = ''
@@ -85,23 +105,28 @@ const setup = (async () => {
 
                     r(txt)
                 }
-
-                e.stopImmediatePropagation()
-                e.stopPropagation()
-                e.preventDefault()
             }
+
+            e.stopImmediatePropagation()
+            e.stopPropagation()
+            e.preventDefault()
         }
+    }
 
-        input.addEventListener('keydown', keydownevent)
-    }))
+    input.addEventListener('keydown', keydownevent)
+}))
 
-    const get_passwd = (async (text: string): Promise<string> => {
-        const value = await get_passwd_helper(text)
+const get_passwd = (async (text: string): Promise<string> => {
+    const value = await get_passwd_helper(text)
 
-        if(value === '.reload') location.reload()
+    if (value === '.reload') location.reload()
 
-        return value
-    })
+    return value
+})
+
+/** Provides a secure scope for containing the hashed password. */
+const setup = (async () => {
+    let password
 
     if (!('vault_data' in insecure_storage.get())) {
         password = Crypto.SHA512(await get_passwd('Choose a password...')).toString()
@@ -140,13 +165,53 @@ type TypedData = {
 
 while (!(await setup()));
 
-input.addEventListener('keypress', e => {
+input.addEventListener('keypress', async e => {
     if (e.key === 'Enter') {
         const text = input.value
-        
-        if(text === '.erase' && confirm('Do you REALLY want to erase ALL data?')) {
+
+        if (text === '.erase' && confirm('Do you REALLY want to erase ALL data?')) {
             localStorage.clear()
             location.reload()
+        }
+
+        if (text === '.share') {
+            const data = better_atob(escape(encodeURI(JSON.stringify(insecure_storage.get()))))
+
+            prompt('Here is your share-able link:', `${location.href}?data=${data}`)
+        }
+
+        if (text === '.change') {
+            input.value = ''
+
+            const Prompt = document.createElement('message')
+            Prompt.innerHTML = `<text>Enter the new password you want to use, or blank to dismiss:</text><date>eons ago</date>`
+            $('messages').appendChild(Prompt)
+            const new_pass = await get_passwd_helper('Choose a new password...')
+
+            if (new_pass === '') {
+                Prompt.remove()
+
+                input.placeholder = 'Type a message...'
+            } else {
+                const Prompt2 = document.createElement('message')
+                Prompt2.innerHTML = `<text>Now please confirm your new password:</text><date>eons ago</date>`
+                $('messages').appendChild(Prompt2)
+
+                const new_pass_confirm = await get_passwd_helper('Confirm the new password...')
+
+                if (new_pass === new_pass_confirm) {
+                    const new_pass_hash = Crypto.SHA512(new_pass).toString()
+                    const new_data = Secure.encrypt(JSON.stringify(secure_storage.get()), new_pass_hash)
+
+                    set_prop(insecure_storage, 'vault_data', new_data)
+                    location.reload()
+                } else {
+                    alert('Passwords did not match!')
+                    Prompt.remove()
+                    Prompt2.remove()
+                    input.placeholder = 'Type a message...'
+                }
+            }
         }
 
         else if (text.length > 0) {
@@ -166,7 +231,7 @@ input.addEventListener('keypress', e => {
 })
 
 function relativeTime(time: number) {
-    if(time === 0) return 'eons ago'
+    if (time === 0) return 'eons ago'
     const diff = Date.now() - time
 
     if (diff < 1000) return 'just now'
@@ -249,6 +314,14 @@ if (!('typed' in secure_storage.get())) {
             {
                 time: 0,
                 text: 'Type ".erase" in the message box and press enter to delete all of your data and restart on a clean slate.'
+            },
+            {
+                time: 0,
+                text: 'Type ".share" in the message box and press enter to generate a share-able link that transfers your ENCRYPTED data with the same password to another device.'
+            },
+            {
+                time: 0,
+                text: 'Use the ".change" command to change your password.'
             }
         ]
     })
