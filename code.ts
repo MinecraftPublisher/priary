@@ -49,7 +49,7 @@ function better_btoa(str) {
 const cur_URL = new URL(location.href)
 
 // Load data from URL
-if (cur_URL.searchParams.has('data')) {
+if (cur_URL.searchParams.get('data')) {
     if (confirm('The current URL contains data content. Do you want to load from there?')) {
         insecure_storage.set(JSON.parse(decodeURI(unescape(better_btoa(cur_URL.searchParams.get('data')!)))))
     }
