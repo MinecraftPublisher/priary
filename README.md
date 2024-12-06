@@ -3,6 +3,8 @@ Private and encrypted diary.
 
 Priary is fully written in HTML/CSS/TS, with a mini-framework called JS effects (which is made by me! an older version was previously available [here](https://js-effects.netlify.app).)
 
+Icon: https://www.flaticon.com/free-icons/diary
+
 ## JS Effects
 JS Effects is a small library that uses object proxies to provide signals functionality to pure JS without requiring any extra compilation steps.
 

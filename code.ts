@@ -48,6 +48,8 @@ function better_btoa(str) {
 
 const cur_URL = new URL(location.href)
 
+console.log(cur_URL)
+
 // Load data from URL
 if (cur_URL.searchParams.get('data')) {
     if (confirm('The current URL contains data content. Do you want to load from there?')) {

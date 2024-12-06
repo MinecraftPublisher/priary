@@ -23805,6 +23805,7 @@ effect(() => {
   localStorage.priary_data = JSON.stringify(insecure_storage.get());
 }, insecure_storage);
 var cur_URL = new URL(location.href);
+console.log(cur_URL);
 if (cur_URL.searchParams.get("data")) {
   if (confirm("The current URL contains data content. Do you want to load from there?")) {
     insecure_storage.set(JSON.parse(decodeURI(unescape(better_btoa(cur_URL.searchParams.get("data"))))));
